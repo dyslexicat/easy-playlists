@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
 
 let defaultStyle = {
@@ -73,8 +72,12 @@ class Playlist extends Component {
     return (
       <div style={{...defaultStyle, display: "inline-block", width: "20%"}}>
         <img/>
-        <h3>Playlist Name</h3>
-        <ul><li>Song1</li><li>Song2</li><li>Song3</li></ul>
+        <h3>{this.props.playlist.name}</h3>
+        <ul>
+          {this.props.playlist.songs.map(song =>
+            <li>{song}</li>
+          )}
+        </ul>
       </div>
     );
   }
@@ -93,7 +96,6 @@ class App extends Component {
 
   }
 
-
   render() {
     return (
       <div className="App">
@@ -104,11 +106,10 @@ class App extends Component {
           </h1>
         <PlaylistCounter playlists={this.state.serverData.user.name}/>
         <HoursCounter playlists={this.state.serverData.user.name}/>
-        <Filter />
-        <Playlist />
-        <Playlist />
-        <Playlist />
-        <Playlist />
+        <Filter/>
+        {this.state.serverData.user.playlists.map(playlist =>
+          <Playlist playlist={playlist}/>
+        )}
       </div> : <h1 style={{defaultStyle}}>Loading...</h1>
       }
     </div>
