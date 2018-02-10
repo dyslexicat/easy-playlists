@@ -96,8 +96,8 @@ class App extends Component {
            }
        })
        }))
-
      }
+
      render() {
        let playlistToRender =
          this.state.user &&
