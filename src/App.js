@@ -5,30 +5,6 @@ let defaultStyle = {
   color: "#fff"
 };
 
-let fakeServerData = {
-  user: {
-    name: 'Alp',
-    playlists: [
-      {
-        name: 'My favourites',
-        songs: ['111', '222', 'Fourty-two']
-      },
-      {
-        name: '2017 Mix',
-        songs: ['AAA', 'BBB', 'CCC']
-      },
-      {
-        name: '2018 Winter',
-        songs: ['Dunno', 'Trying', 'My Best']
-      },
-      {
-        name: 'Discover Weekly',
-        songs: ['WOW', 'What a', 'Discovery']
-      }
-    ]
-  }
-};
-
 class PlaylistCounter extends Component {
   render() {
     return (
@@ -70,12 +46,13 @@ class Filter extends Component {
 
 class Playlist extends Component {
   render() {
+    let playlist = this.props.playlist
     return (
       <div style={{...defaultStyle, display: "inline-block", width: "20%"}}>
-        <img/>
-        <h3>{this.props.playlist.name}</h3>
+        <img src={playlist.imageUrl} style={{width: '160px'}}/>
+        <h3>{playlist.name}</h3>
         <ul>
-          {this.props.playlist.songs.map(song =>
+          {playlist.songs.map(song =>
             <li>{song}</li>
           )}
         </ul>
@@ -92,39 +69,68 @@ class App extends Component {
     }
   }
   componentDidMount() {
-    // use an arrow function so that "this" is locked in the function at the initialization otherwise it won't work
-    setTimeout(() => {
-      this.setState({serverData: fakeServerData});
-    }, 1000)
-  }
+    let accessToken = window.location.search.split("token=")[1]
+    console.log(accessToken)
 
-  render() {
+    if (!accessToken)
+         return;
+       fetch('https://api.spotify.com/v1/me', {
+         headers: {'Authorization': 'Bearer ' + accessToken}
+       }).then(response => response.json())
+       .then(data => this.setState({
+         user: {
+           name: data.display_name
+         }
+       }))
 
-    let playlistToRender = this.state.serverData.user ? this.state.serverData.user.playlists
-      .filter(playlist =>
-        playlist.name.toLowerCase().includes(
-          this.state.filterString.toLowerCase())
-    ) : []
-    return (
-      <div className="App">
-        {this.state.serverData.user ?
-        <div>
-          <h1 style={{...defaultStyle}}>
-            Hey, {this.state.serverData.user.name}
-          </h1>
-        <PlaylistCounter playlists={playlistToRender}/>
-        <HoursCounter playlists={playlistToRender}/>
-        <Filter onTextChange={text =>
-            this.setState({filterString: text}
-          )}/>
-        {playlistToRender.map(playlist =>
-          <Playlist playlist={playlist}/>
-        )}
-      </div> : <h1 style={{defaultStyle}}>Loading...</h1>
-      }
-    </div>
-    );
-  }
-}
+       fetch('https://api.spotify.com/v1/me/playlists', {
+         headers: {'Authorization': 'Bearer ' + accessToken}
+       }).then(response => response.json())
+       .then(data => this.setState({
+         playlists: data.items.map(item => {
+           console.log(data.items)
+           return {
+             name: item.name,
+             imageUrl: item.images[0].url,
+             songs: []
+           }
+       })
+       }))
 
-export default App;
+     }
+     render() {
+       let playlistToRender =
+         this.state.user &&
+         this.state.playlists
+           ? this.state.playlists.filter(playlist =>
+             playlist.name.toLowerCase().includes(
+               this.state.filterString.toLowerCase()))
+           : []
+       return (
+         <div className="App">
+           {this.state.user ?
+           <div>
+             <h1 style={{...defaultStyle, 'font-size': '54px'}}>
+               {this.state.user.name}'s Playlists
+             </h1>
+             <PlaylistCounter playlists={playlistToRender}/>
+             <HoursCounter playlists={playlistToRender}/>
+             <Filter onTextChange={text => {
+                 this.setState({filterString: text})
+               }}/>
+             {playlistToRender.map(playlist =>
+               <Playlist playlist={playlist} />
+             )}
+           </div> : <button onClick={() => {
+               window.location = window.location.href.includes('localhost')
+                 ? 'http://localhost:8888/login'
+                 : 'https://better-playlists-backend.herokuapp.com/login' }
+             }
+             style={{padding: '20px', 'font-size': '50px', 'margin-top': '20px'}}>Sign in with Spotify</button>
+           }
+         </div>
+       );
+     }
+   }
+
+   export default App;
